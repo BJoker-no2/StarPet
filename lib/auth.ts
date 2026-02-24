@@ -7,7 +7,10 @@ const baseUrl =
 
 const googleWellKnown =
   process.env.GOOGLE_WELLKNOWN_URL ??
-  (baseUrl
+  ((process.env.USE_LOCAL_GOOGLE_WELLKNOWN === "1" ||
+    baseUrl?.startsWith("http://localhost") ||
+    baseUrl?.startsWith("http://127.0.0.1")) &&
+  baseUrl
     ? new URL(
         "/api/auth/google/.well-known/openid-configuration",
         baseUrl,
