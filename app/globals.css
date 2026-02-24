@@ -1,0 +1,193 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: #1A1B4B;
+  --foreground: #F5F0EB;
+  --card: rgba(255, 255, 255, 0.06);
+  --card-foreground: #F5F0EB;
+  --popover: rgba(26, 27, 75, 0.95);
+  --popover-foreground: #F5F0EB;
+  --primary: #D4AF37;
+  --primary-foreground: #1A1B4B;
+  --secondary: rgba(255, 255, 255, 0.1);
+  --secondary-foreground: #F5F0EB;
+  --muted: rgba(255, 255, 255, 0.08);
+  --muted-foreground: rgba(245, 240, 235, 0.6);
+  --accent: #F4B4C6;
+  --accent-foreground: #1A1B4B;
+  --destructive: #E74C3C;
+  --destructive-foreground: #F5F0EB;
+  --border: rgba(255, 255, 255, 0.12);
+  --input: rgba(255, 255, 255, 0.1);
+  --ring: #D4AF37;
+  --chart-1: #D4AF37;
+  --chart-2: #F4B4C6;
+  --chart-3: #A8D8EA;
+  --chart-4: #352F64;
+  --chart-5: #F5F0EB;
+  --radius: 0.75rem;
+  --sidebar: #1A1B4B;
+  --sidebar-foreground: #F5F0EB;
+  --sidebar-primary: #D4AF37;
+  --sidebar-primary-foreground: #1A1B4B;
+  --sidebar-accent: rgba(255, 255, 255, 0.1);
+  --sidebar-accent-foreground: #F5F0EB;
+  --sidebar-border: rgba(255, 255, 255, 0.12);
+  --sidebar-ring: #D4AF37;
+  --gold: #D4AF37;
+  --soft-pink: #F4B4C6;
+  --soft-blue: #A8D8EA;
+  --midnight: #1A1B4B;
+  --twilight: #352F64;
+}
+
+@theme inline {
+  --font-sans: 'Nunito', 'Geist', 'Geist Fallback';
+  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-gold: var(--gold);
+  --color-soft-pink: var(--soft-pink);
+  --color-soft-blue: var(--soft-blue);
+  --color-midnight: var(--midnight);
+  --color-twilight: var(--twilight);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    overflow-x: hidden;
+  }
+}
+
+/* Shooting star animation */
+@keyframes shootingStar {
+  0% {
+    transform: translateX(0) translateY(0) rotate(-45deg);
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(300px) translateY(300px) rotate(-45deg);
+    opacity: 0;
+  }
+}
+
+/* Float animation for pet bubbles */
+@keyframes floatBubble {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(10px, -15px) scale(1.02);
+  }
+  50% {
+    transform: translate(-5px, -25px) scale(1);
+  }
+  75% {
+    transform: translate(-15px, -10px) scale(0.98);
+  }
+}
+
+/* Breathing glow for bubbles */
+@keyframes breatheGlow {
+  0%, 100% {
+    box-shadow: 0 0 15px 2px rgba(212, 175, 55, 0.15), 0 0 30px 5px rgba(244, 180, 198, 0.08);
+  }
+  50% {
+    box-shadow: 0 0 25px 5px rgba(212, 175, 55, 0.3), 0 0 50px 10px rgba(244, 180, 198, 0.15);
+  }
+}
+
+/* Twinkling stars */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+/* Flower particle float up */
+@keyframes flowerFloat {
+  0% {
+    transform: translateY(0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-120px) scale(0.3) rotate(180deg);
+    opacity: 0;
+  }
+}
+
+/* Meteor debris around new members */
+@keyframes meteorDebris {
+  0% { transform: rotate(0deg) translateX(50px) rotate(0deg); opacity: 0.8; }
+  50% { opacity: 1; }
+  100% { transform: rotate(360deg) translateX(50px) rotate(-360deg); opacity: 0.8; }
+}
+
+/* Stars expand from center on entry */
+@keyframes starsExpand {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Neon pulse for CTA button */
+@keyframes neonPulse {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.4), 0 0 30px rgba(244, 180, 198, 0.2), 0 0 60px rgba(168, 216, 234, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.6), 0 0 40px rgba(244, 180, 198, 0.3), 0 0 80px rgba(168, 216, 234, 0.2);
+  }
+}
