@@ -1,6 +1,19 @@
 import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 
+const baseUrl =
+  process.env.NEXTAUTH_URL ??
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined);
+
+const googleWellKnown =
+  process.env.GOOGLE_WELLKNOWN_URL ??
+  (baseUrl
+    ? new URL(
+        "/api/auth/google/.well-known/openid-configuration",
+        baseUrl,
+      ).toString()
+    : undefined);
+
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === "development",
@@ -11,9 +24,10 @@ export const authOptions: NextAuthOptions = {
       httpOptions: {
         timeout: 30000,
       },
-      // Avoid server-side fetch to `accounts.google.com` for OIDC discovery in restricted networks.
-      // NOTE: If your network also blocks Google token/jwks/userinfo endpoints, the callback step will still fail.
-      wellKnown: `${process.env.NEXTAUTH_URL}/api/auth/google/.well-known/openid-configuration`,
+      // Prefer a local discovery doc to avoid a server-side fetch during OIDC discovery
+      // (useful in restricted networks). Falls back to the provider default if we can't
+      // determine a stable base URL.
+      ...(googleWellKnown ? { wellKnown: googleWellKnown } : {}),
       // Make sure user sees Google auth UI again after logout.
       authorization: {
         params: {

@@ -5,6 +5,12 @@ import { HttpsProxyAgent } from "https-proxy-agent";
 
 export const runtime = "nodejs";
 
+// On Vercel, `VERCEL_URL` is available after deployment (no protocol).
+// This lets us avoid hardcoding NEXTAUTH_URL for preview/prod deployments.
+if (!process.env.NEXTAUTH_URL && process.env.VERCEL_URL) {
+  process.env.NEXTAUTH_URL = `https://${process.env.VERCEL_URL}`;
+}
+
 declare global {
   // eslint-disable-next-line no-var
   var __proxyAgentInstalled: boolean | undefined;
