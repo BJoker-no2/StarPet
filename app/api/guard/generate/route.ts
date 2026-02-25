@@ -168,7 +168,12 @@ export async function POST(req: Request) {
           ],
         },
       ],
-    });
+      // OpenRouter image-generation models require modalities to include "image".
+      // See: https://openrouter.ai/docs/features/multimodal/image-generation
+      modalities: ["image", "text"] as any,
+      // Gemini-only knob (optional). Keep default unless you want higher res.
+      // image_config: { image_size: "1K" } as any,
+    } as any);
 
     const message: any = completion.choices?.[0]?.message ?? null;
     const images = extractImages(message);
