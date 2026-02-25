@@ -270,6 +270,7 @@ export default function GuardUploadPage() {
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [outputs, setOutputs] = useState<string[]>([]);
+  const [lastApiResponse, setLastApiResponse] = useState<any>(null);
 
   // Keep: adjust uploaded image position (drag) + zoom.
   const [bgPos, setBgPos] = useState({ x: 50, y: 50 }); // percentage
@@ -303,14 +304,36 @@ export default function GuardUploadPage() {
     fileRef.current?.click();
   }
 
+  function safeStringifyForUi(value: any) {
+    const seen = new WeakSet<object>();
+    try {
+      return JSON.stringify(
+        value,
+        (_k, v) => {
+          if (typeof v === "string" && v.length > 400) {
+            return `${v.slice(0, 400)}…(truncated, ${v.length} chars)`;
+          }
+          if (v && typeof v === "object") {
+            if (seen.has(v)) return "[Circular]";
+            seen.add(v);
+          }
+          return v;
+        },
+        2
+      );
+    } catch {
+      return String(value);
+    }
+  }
+
   function buildPrompt(k: StyleKey) {
     if (k === "forest") {
-      return "根据图片中的宠物形象，生成对应的二次元形象，风格为新海诚风格";
+      return "请基于输入的宠物照片，生成一张新的二次元插画（风格：新海诚风格，清透光影、电影感、细腻背景）。只返回生成的图片，不要返回文字说明。";
     }
     if (k === "sketch") {
-      return "根据图片中的宠物形象，生成对应的二次元形象，风格为温暖简笔手绘感";
+      return "请基于输入的宠物照片，生成一张新的二次元插画（风格：温暖简笔手绘、线条干净、柔和配色）。只返回生成的图片，不要返回文字说明。";
     }
-    return "根据图片中的宠物形象，生成对应的二次元形象，风格为星际守护梦幻感";
+    return "请基于输入的宠物照片，生成一张新的二次元插画（风格：星际守护、梦幻霓虹、柔光氛围、星空背景）。只返回生成的图片，不要返回文字说明。";
   }
 
   async function fileToDataUrlResized(input: File, maxSide = 1024) {
@@ -348,6 +371,7 @@ export default function GuardUploadPage() {
     setGenerating(true);
     setError(null);
     setOutputs([]);
+    setLastApiResponse(null);
 
     try {
       const prompt = buildPrompt(style);
@@ -358,7 +382,14 @@ export default function GuardUploadPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt, imageDataUrl }),
       });
-      const data = await res.json().catch(() => ({}));
+      const rawText = await res.text();
+      let data: any = {};
+      try {
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = { _raw: rawText };
+      }
+      setLastApiResponse({ ok: res.ok, status: res.status, data });
 
       if (!res.ok) {
         throw new Error(
@@ -718,6 +749,25 @@ export default function GuardUploadPage() {
           {error && (
             <div className="px-5 pb-4 text-sm" style={{ color: "#F4B4C6" }}>
               {error}
+            </div>
+          )}
+
+          {lastApiResponse && (
+            <div className="px-5 pb-4">
+              <details
+                className="rounded-2xl p-4 text-xs text-foreground/80"
+                style={{
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.10)",
+                }}
+              >
+                <summary className="cursor-pointer select-none text-sm text-foreground/80">
+                  查看 API Response（调试）
+                </summary>
+                <pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap break-words">
+                  {safeStringifyForUi(lastApiResponse)}
+                </pre>
+              </details>
             </div>
           )}
 

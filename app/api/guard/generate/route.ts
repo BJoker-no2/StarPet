@@ -73,7 +73,10 @@ function extractImages(message: any): string[] {
 
   // Some providers may attach images directly to the message.
   if (Array.isArray(message?.images)) {
-    for (const it of message.images) push(it?.url ?? it);
+    for (const it of message.images) {
+      // OpenRouter response format: { type: "image_url", image_url: { url: "data:image/..." } }
+      push(it?.image_url?.url ?? it?.imageUrl?.url ?? it?.url ?? it);
+    }
   }
 
   const content = message?.content;
@@ -171,8 +174,9 @@ export async function POST(req: Request) {
       // OpenRouter image-generation models require modalities to include "image".
       // See: https://openrouter.ai/docs/features/multimodal/image-generation
       modalities: ["image", "text"] as any,
-      // Gemini-only knob (optional). Keep default unless you want higher res.
-      // image_config: { image_size: "1K" } as any,
+      // OpenRouter image config (optional).
+      // https://openrouter.ai/docs/guides/overview/multimodal/image-generation#aspect-ratio
+      image_config: { aspect_ratio: "1:1", image_size: "1K" } as any,
     } as any);
 
     const message: any = completion.choices?.[0]?.message ?? null;
@@ -181,6 +185,11 @@ export async function POST(req: Request) {
     return NextResponse.json({
       images,
       message,
+      meta: {
+        id: (completion as any)?.id ?? null,
+        model: (completion as any)?.model ?? null,
+        usage: (completion as any)?.usage ?? null,
+      },
     });
   } catch (err: any) {
     // Keep response safe; do not leak keys or full upstream payloads.
