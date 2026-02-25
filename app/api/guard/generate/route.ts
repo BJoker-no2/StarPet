@@ -4,22 +4,109 @@ import { ensureHttpsProxyAgent } from "@/lib/server-proxy";
 
 export const runtime = "nodejs";
 
+function normalizeUrlCandidate(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const s = raw.trim();
+  if (!s) return null;
+
+  // Trim common trailing punctuation from markdown/JSON formatting.
+  const trimmed = s.replace(/[)\],"'`>]+$/g, "");
+  if (trimmed.startsWith("data:image/")) return trimmed;
+  if (/^https?:\/\/\S+/i.test(trimmed)) return trimmed;
+  return null;
+}
+
+function extractDataUrlsFromText(text: string): string[] {
+  const out: string[] = [];
+
+  // Handle base64 that may be wrapped with whitespace/newlines (common in markdown/code blocks).
+  let idx = 0;
+  while (true) {
+    const start = text.indexOf("data:image/", idx);
+    if (start === -1) break;
+
+    const base64Marker = text.indexOf(";base64,", start);
+    if (base64Marker === -1) {
+      idx = start + 10;
+      continue;
+    }
+    const comma = base64Marker + ";base64,".length;
+
+    let end = comma;
+    while (end < text.length) {
+      const ch = text[end];
+      if (/[A-Za-z0-9+/=\r\n\t ]/.test(ch)) {
+        end++;
+        continue;
+      }
+      break;
+    }
+
+    const header = text.slice(start, comma);
+    const b64 = text.slice(comma, end).replace(/\s+/g, "");
+    const candidate = normalizeUrlCandidate(`${header}${b64}`);
+    if (candidate) out.push(candidate);
+    idx = end;
+  }
+
+  return out;
+}
+
+function extractHttpUrlsFromText(text: string): string[] {
+  const matches = text.match(/https?:\/\/\S+/gi) ?? [];
+  const out: string[] = [];
+  for (const m of matches) {
+    const candidate = normalizeUrlCandidate(m);
+    if (candidate) out.push(candidate);
+  }
+  return out;
+}
+
 function extractImages(message: any): string[] {
   const images: string[] = [];
+
+  const push = (v: unknown) => {
+    const candidate = normalizeUrlCandidate(v);
+    if (!candidate) return;
+    if (!images.includes(candidate)) images.push(candidate);
+  };
+
+  // Some providers may attach images directly to the message.
+  if (Array.isArray(message?.images)) {
+    for (const it of message.images) push(it?.url ?? it);
+  }
 
   const content = message?.content;
   if (Array.isArray(content)) {
     for (const part of content) {
-      if (part?.type === "image_url" && part?.image_url?.url) {
-        images.push(String(part.image_url.url));
+      // OpenAI-style content parts: { type: "text", text: "..." } / { type: "image_url", image_url: { url } }
+      if (part?.type === "image_url") {
+        push(part?.image_url?.url ?? part?.image_url ?? part?.url);
+        continue;
+      }
+
+      // Provider variants seen in the wild.
+      if (part?.type === "image" || part?.type === "output_image") {
+        push(part?.image_url?.url ?? part?.image_url ?? part?.url);
+        if (part?.image?.url) push(part.image.url);
+        if (part?.image?.data && (part?.image?.media_type || part?.image?.mime_type)) {
+          const mt = String(part.image.media_type ?? part.image.mime_type);
+          push(`data:${mt};base64,${String(part.image.data)}`);
+        }
+        if (part?.source?.data && part?.source?.media_type) {
+          push(`data:${String(part.source.media_type)};base64,${String(part.source.data)}`);
+        }
+        continue;
+      }
+
+      if (part?.type === "text" && typeof part?.text === "string") {
+        for (const u of extractDataUrlsFromText(part.text)) push(u);
+        for (const u of extractHttpUrlsFromText(part.text)) push(u);
       }
     }
   } else if (typeof content === "string") {
-    const matches =
-      content.match(
-        /(data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=]+|https?:\/\/\S+)/g
-      ) ?? [];
-    for (const m of matches) images.push(m);
+    for (const u of extractDataUrlsFromText(content)) push(u);
+    for (const u of extractHttpUrlsFromText(content)) push(u);
   }
 
   return images;
@@ -99,4 +186,3 @@ export async function POST(req: Request) {
     );
   }
 }
-

@@ -372,7 +372,22 @@ export default function GuardUploadPage() {
 
       const images = Array.isArray(data?.images) ? (data.images as string[]) : [];
       if (images.length === 0) {
-        throw new Error("API 未返回图片（images 为空）");
+        const content = (data as any)?.message?.content;
+        const textHint =
+          typeof content === "string"
+            ? content
+            : Array.isArray(content)
+              ? content
+                  .filter((p: any) => p?.type === "text" && typeof p?.text === "string")
+                  .map((p: any) => p.text)
+                  .join("\n")
+              : "";
+        const hint = typeof textHint === "string" ? textHint.trim() : "";
+        throw new Error(
+          hint
+            ? `API 未返回图片（images 为空）。模型返回：${hint.slice(0, 200)}`
+            : "API 未返回图片（images 为空）"
+        );
       }
 
       setOutputs(images);
@@ -750,4 +765,3 @@ export default function GuardUploadPage() {
     </main>
   );
 }
-
